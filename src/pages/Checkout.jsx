@@ -2,9 +2,7 @@ import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import UnlockPaymentModal from "../components/UnlockPaymentModal";
-
-const API = "https://storybook-backend-payment.onrender.com";
-// const API = "http://localhost:3000";
+import { apiUrl } from "../config/api";
 
 export default function Checkout() {
   const [params] = useSearchParams();
@@ -36,7 +34,7 @@ export default function Checkout() {
   const saveAndPay = async () => {
     setLoading(true);
     try {
-      await axios.post(`${API}/api/checkout/save-address`, {
+      await axios.post(apiUrl("/api/checkout/save-address"), {
         req_id,
         name: form.name,
         email: form.email,
@@ -108,7 +106,17 @@ export default function Checkout() {
           amount={book_Price}
           onClose={() => setShowPayment(false)}
           onSuccess={() => {
-            navigate(`/preview?request_id=${req_id}&book_id=${book_id}`);
+            const previewParams = new URLSearchParams({
+              request_id: req_id || "",
+              book_id: book_id || "",
+              paid: "true",
+            });
+
+            if (kidName) {
+              previewParams.set("name", kidName);
+            }
+
+            navigate(`/preview?${previewParams.toString()}`);
           }}
         />
       )}

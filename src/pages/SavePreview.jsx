@@ -3,10 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import heroImg from "../assets/magic_icon.svg";
 import useChildStore from "../store/childStore";
 import axios from "axios";
-
-// const local_server_url = "http://localhost:3000";
-const local_server_url = "https://storybook-backend-payment.onrender.com";
-// const local_server_url = "https://storybook-render-backend.onrender.com";
+import { apiUrl } from "../config/api";
 
 function SavePreview() {
   const navigate = useNavigate();
@@ -62,7 +59,7 @@ function SavePreview() {
      ===================================================== */
   const sendPreviewLink = async () => {
     try {
-      await axios.post(`${local_server_url}/api/photo/send_preview`, {
+      const response = await axios.post(apiUrl("/api/photo/send_preview"), {
         email: formData.email,
         name: formData.name,
         req_id: request_id,
@@ -70,21 +67,33 @@ function SavePreview() {
         book_id,
         notify,
       });
+
+      return response.data;
     } catch (error) {
       console.error("Error sending preview link:", error);
+      throw error;
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await sendPreviewLink();
+    try {
+      await sendPreviewLink();
 
-    if (notify) {
-      setShowThankYou(true);
-    } else {
-      navigate(
-        `/preview?request_id=${request_id}&book_id=${book_id}&name=${kidName}&openPayment=true`,
-      );
+      if (notify) {
+        setShowThankYou(true);
+      } else {
+        navigate(
+          `/preview?request_id=${request_id}&book_id=${book_id}&name=${kidName}&openPayment=true`,
+        );
+      }
+    } catch (error) {
+      const message =
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        "Preview email could not be sent. Please check your email setup and try again.";
+
+      alert(message);
     }
   };
 

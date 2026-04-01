@@ -2,9 +2,7 @@ import BookCard from "../components/BookCard";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import PropTypes from "prop-types";
-
-// const server_url = "http://127.0.0.1:3000";
-const server_url = "https://storybook-backend-payment.onrender.com";
+import { apiUrl } from "../config/api";
 
 function BooksList({ layout = "vertical" }) {
   const [books, setBooks] = useState([]);
@@ -17,7 +15,7 @@ function BooksList({ layout = "vertical" }) {
   const getBooks = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${server_url}/api/storybook`);
+      const res = await axios.get(apiUrl("/api/storybook"));
       setBooks(res.data);
       console.log(res.data);
     } catch (error) {

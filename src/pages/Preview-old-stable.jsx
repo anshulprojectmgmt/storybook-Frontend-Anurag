@@ -5,9 +5,7 @@ import "react-circular-progressbar/dist/styles.css";
 import useChildStore from "../store/childStore";
 import axios from "axios";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
-
-const local_server_url = "http://localhost:3000";
-// const local_server_url = "https://storybook-render-backend.onrender.com";
+import { apiUrl } from "../config/api";
 //    {
 //     "_id": "68eeba12baa2e6ef48150415",
 //     "req_id": "req_cihotfrsn",
@@ -86,7 +84,7 @@ function Preview() {
     const fetchFinalBook = async () => {
       try {
         const res = await axios.get(
-          `${local_server_url}/api/photo/get_all_pages`,
+          apiUrl("/api/photo/get_all_pages"),
           {
             params: { req_id: request_id },
           },
@@ -151,7 +149,7 @@ function Preview() {
     const poll = async () => {
       try {
         const res = await axios.get(
-          `${local_server_url}/api/photo/check_generation_status`,
+          apiUrl("/api/photo/check_generation_status"),
           {
             params: { req_id, job_id, page_number, book_id },
           },
@@ -187,7 +185,7 @@ function Preview() {
     async (pageNumber, book_id) => {
       try {
         const response = await axios.get(
-          `${local_server_url}/api/photo/get_generation_details`,
+          apiUrl("/api/photo/get_generation_details"),
           {
             params: {
               req_id: request_id,
@@ -302,7 +300,7 @@ function Preview() {
 
   const updatePageImage = async (req_id, job_id, image_id) => {
     try {
-      await axios.post(`${local_server_url}/api/photo/update_image`, {
+      await axios.post(apiUrl("/api/photo/update_image"), {
         req_id,
         job_id,
         image_id,

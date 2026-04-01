@@ -3,8 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import heroImg from "../assets/magic_icon.svg";
 import useChildStore from "../store/childStore";
 import axios from "axios";
-const local_server_url = "http://localhost:3000";
-// const local_server_url = "https://storybook-render-backend.onrender.com";
+import { apiUrl } from "../config/api";
 
 function SavePreview() {
   const navigate = useNavigate();
@@ -25,7 +24,7 @@ function SavePreview() {
 
   const sendPreviewLink = async () => {
     try {
-      await axios.post(`${local_server_url}/api/photo/send_preview`, {
+      await axios.post(apiUrl("/api/photo/send_preview"), {
         email: formData.email,
         name: formData.name,
         req_id: request_id,

@@ -4,9 +4,9 @@ import { useDropzone } from "react-dropzone";
 import useChildStore from "../store/childStore";
 import { PhotoIcon, BookOpenIcon } from "@heroicons/react/24/outline";
 import axios from "axios";
-// const local_server_url = "http://localhost:3000";
-const local_server_url = "https://storybook-backend-payment.onrender.com";
-// const local_server_url = "https://storybook-render-backend.onrender.com";
+import { apiUrl } from "../config/api";
+
+const getFileKey = (file) => `${file.name}-${file.size}-${file.lastModified}`;
 
 function PhotoUpload() {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ function PhotoUpload() {
   // Get all query parameters
   const book_id = queryParams.get("book_id");
   const page_count = queryParams.get("page_count");
-  const min_photos = Number(queryParams.get("min_photos")) || 1;
+  const requiredPhotoCount = 2;
   const childName =
     queryParams.get("name") || useChildStore((state) => state.childName);
   const gender = queryParams.get("gender");
@@ -27,6 +27,7 @@ function PhotoUpload() {
   const [uploadStatus, setUploadStatus] = useState([]);
   const [req_id, setRequestId] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState("");
 
   const handleImageUpload = async (file, request_id) => {
     const formData = new FormData();
@@ -36,7 +37,7 @@ function PhotoUpload() {
       // First API call to get file URL
 
       const response = await axios.post(
-        `${local_server_url}/api/photo/original_image`,
+        apiUrl("/api/photo/original_image"),
         formData,
       );
       const { file_url } = await response.data;
@@ -44,7 +45,7 @@ function PhotoUpload() {
       // Second API call to add photo to queue
 
       const queueResponse = await axios.post(
-        `${local_server_url}/api/photo/add_photo_to_queue`,
+        apiUrl("/api/photo/add_photo_to_queue"),
         {
           file_name: file.name,
           file_url,
@@ -61,27 +62,60 @@ function PhotoUpload() {
     }
   };
 
-  const onDrop = useCallback(async (acceptedFiles) => {
-    setUploadedFiles(acceptedFiles);
-    setIsUploading(true);
-    setUploadStatus([]); // Reset status
+  const onDrop = useCallback(
+    async (acceptedFiles) => {
+      const existingKeys = new Set(uploadedFiles.map(getFileKey));
+      const uniqueIncomingFiles = acceptedFiles.filter(
+        (file) => !existingKeys.has(getFileKey(file)),
+      );
 
-    // Generate a dummy request ID (in production this should come from your backend) for every photo upload
-    const request_id = `req_${Math.random().toString(36).substr(2, 9)}`;
-    setRequestId(request_id);
+      const remainingSlots = Math.max(
+        0,
+        requiredPhotoCount - uploadedFiles.length,
+      );
+      const filesToAdd = uniqueIncomingFiles.slice(0, remainingSlots);
 
-    // Process each file individually
-    const statusResults = [];
-    for (let i = 0; i < acceptedFiles.length; i++) {
-      const file = acceptedFiles[i];
-      const result = await handleImageUpload(file, request_id);
-      statusResults.push(result);
-      // Update status immediately after each file is processed
-      setUploadStatus([...statusResults]);
-    }
+      if (!filesToAdd.length) {
+        setUploadMessage(
+          uploadedFiles.length >= requiredPhotoCount
+            ? `You already uploaded ${requiredPhotoCount} photos.`
+            : "Please add a different photo.",
+        );
+        return;
+      }
 
-    setIsUploading(false);
-  }, []);
+      if (uniqueIncomingFiles.length > filesToAdd.length) {
+        setUploadMessage(`Only ${requiredPhotoCount} photos are allowed.`);
+      } else {
+        setUploadMessage("");
+      }
+
+      const request_id =
+        req_id || `req_${Math.random().toString(36).substr(2, 9)}`;
+
+      if (!req_id) {
+        setRequestId(request_id);
+      }
+
+      const startIndex = uploadedFiles.length;
+      setUploadedFiles((prev) => [...prev, ...filesToAdd]);
+      setIsUploading(true);
+
+      for (let i = 0; i < filesToAdd.length; i++) {
+        const file = filesToAdd[i];
+        const result = await handleImageUpload(file, request_id);
+
+        setUploadStatus((prev) => {
+          const next = [...prev];
+          next[startIndex + i] = result;
+          return next;
+        });
+      }
+
+      setIsUploading(false);
+    },
+    [req_id, requiredPhotoCount, uploadedFiles],
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -89,7 +123,7 @@ function PhotoUpload() {
       "image/*": [".jpeg", ".jpg", ".png"],
     },
     multiple: true,
-    maxFiles: 4,
+    maxFiles: requiredPhotoCount,
   });
 
   const handleShowPreview = () => {
@@ -103,7 +137,7 @@ function PhotoUpload() {
         age: age || "",
         birthMonth: birthMonth || "",
         page_count: page_count,
-        min_photos: min_photos,
+        min_photos: requiredPhotoCount,
       });
 
       navigate(`/preview?${previewParams.toString()}`);
@@ -112,7 +146,7 @@ function PhotoUpload() {
 
   // Check if all photos are successfully uploaded
   const allPhotosUploaded =
-    uploadedFiles.length >= min_photos &&
+    uploadedFiles.length === requiredPhotoCount &&
     uploadStatus.length === uploadedFiles.length &&
     uploadStatus.every((status) => status.success) &&
     !isUploading;
@@ -127,7 +161,7 @@ function PhotoUpload() {
           {childName}'s Story Photos
         </h2>
         <p className="text-center text-lg mb-8 text-gray-600">
-          Upload 2 to 4 photos of {childName}
+          Upload exactly {requiredPhotoCount} photos of {childName}
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-[1.2fr_1fr] gap-6 mb-8 items-stretch">
@@ -168,11 +202,21 @@ function PhotoUpload() {
               <p className="text-sm text-gray-500">or click to select files</p>
 
               <p className="text-xs text-gray-400">
-                Minimum {Number(min_photos)} photos required
+                Exactly {requiredPhotoCount} photos required for this book
+              </p>
+
+              <p className="text-xs text-blue-500">
+                You can upload both together or add them one by one.
               </p>
             </div>
           </div>
         </div>
+
+        {uploadMessage && (
+          <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
+            {uploadMessage}
+          </div>
+        )}
 
         {uploadedFiles.length > 0 && (
           <div className="mb-6">

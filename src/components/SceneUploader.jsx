@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import axios from "axios";
+import { apiUrl } from "../config/api";
 
 function SceneUploader() {
   const [searchParams] = useSearchParams();
@@ -58,7 +59,7 @@ function SceneUploader() {
     try {
       // Send to your backend route
       let data = await axios.post(
-        "http://localhost:3000/api/scene/bulk-upload",
+        apiUrl("/api/scene/bulk-upload"),
         formData,
         {
           headers: {

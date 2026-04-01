@@ -728,7 +728,7 @@ function Preview() {
                     <img
                       src={images[safeImageIndex]}
                       alt={`Page ${pageIndex + 1} - Image ${safeImageIndex + 1}`}
-                      className="aspect-[4/5] w-full rounded-xl border-4 border-blue-200 object-contain transition-opacity duration-300 sm:aspect-[4/3]"
+                      className="aspect-[4/5] w-full rounded-xl object-contain transition-opacity duration-300 sm:aspect-[4/3]"
                     />
 
                     {images.length > 1 && (

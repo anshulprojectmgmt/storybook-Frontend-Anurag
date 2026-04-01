@@ -56,6 +56,9 @@ function Preview() {
   const [backCoverUrl, setBackCoverUrl] = useState(null);
   const [finalPdfStatus, setFinalPdfStatus] = useState("not_ready");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [showFinalSelectionToast, setShowFinalSelectionToast] = useState(false);
+  const [hasShownFinalSelectionToast, setHasShownFinalSelectionToast] =
+    useState(false);
 
   const [pageData, setPageData] = useState([]);
   const [currentImageIndexes, setCurrentImageIndexes] = useState({});
@@ -105,6 +108,21 @@ function Preview() {
   useEffect(() => {
     pageDataRef.current = pageData;
   }, [pageData]);
+
+  useEffect(() => {
+    if (!isFinalSelectionReady || hasShownFinalSelectionToast) {
+      return undefined;
+    }
+
+    setShowFinalSelectionToast(true);
+    setHasShownFinalSelectionToast(true);
+
+    const timeoutId = setTimeout(() => {
+      setShowFinalSelectionToast(false);
+    }, 3000);
+
+    return () => clearTimeout(timeoutId);
+  }, [hasShownFinalSelectionToast, isFinalSelectionReady]);
 
   useEffect(() => {
     if (!request_id || !book_id || allPagesLoaded) {
@@ -638,28 +656,36 @@ function Preview() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-28">
-      <div className="max-w-2xl mx-auto px-4 pt-6">
-        <h1 className="text-4xl font-bold text-center">
+    <div className="min-h-screen bg-gray-50 pb-40 sm:pb-32">
+      {showFinalSelectionToast && (
+        <div className="fixed left-1/2 top-4 z-[60] w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 rounded-2xl bg-blue-900 px-4 py-3 text-center text-sm font-medium text-white shadow-2xl sm:top-6 sm:text-base">
+          Your book is ready. Pick your favorite page images now. If you do
+          nothing, we&apos;ll create the PDF in 3 minutes using the current
+          selections.
+        </div>
+      )}
+
+      <div className="mx-auto max-w-3xl px-3 pt-4 sm:px-4 sm:pt-6">
+        <h1 className="text-center text-2xl font-bold leading-tight sm:text-4xl">
         {childName ? `${childName}'s Book Preview` : "Book Preview"}
         </h1>
 
-        <div className="mt-8 space-y-12">
+        <div className="mt-6 space-y-6 sm:mt-8 sm:space-y-12">
           <div className="text-center space-y-2 text-gray-600">
-            <p className="text-lg md:text-xl font-medium">
+            <p className="text-sm font-medium sm:text-lg">
               Choose the picture you like for each page.
             </p>
           </div>
 
           {frontCoverUrl && (
-            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
-              <h2 className="text-xl font-bold text-blue-900 mb-4">
+            <div className="rounded-2xl bg-white p-3 shadow-lg sm:p-6">
+              <h2 className="mb-3 text-lg font-bold text-blue-900 sm:mb-4 sm:text-xl">
                 Front Cover
               </h2>
               <img
                 src={frontCoverUrl}
                 alt="Front Cover"
-                className="w-full aspect-[4/3] object-contain"
+                className="aspect-[4/5] w-full rounded-xl object-contain sm:aspect-[4/3]"
               />
             </div>
           )}
@@ -679,16 +705,16 @@ function Preview() {
             return (
               <div
                 key={page.page_number || pageIndex}
-                className="bg-white rounded-xl shadow-lg p-4 sm:p-6 transform transition-all duration-500 ease-in-out"
+                className="transform rounded-2xl bg-white p-3 shadow-lg transition-all duration-500 ease-in-out sm:p-6"
               >
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-blue-900">
+                <div className="mb-3 flex items-center justify-between sm:mb-4">
+                  <h2 className="text-lg font-bold text-blue-900 sm:text-xl">
                     Page {page.page_number || pageIndex + 1}
                   </h2>
                 </div>
 
                 {images.length > 1 && (
-                  <p className="mb-4 rounded-xl bg-blue-50 px-4 py-3 text-sm font-medium text-blue-800">
+                  <p className="mb-3 rounded-xl bg-blue-50 px-3 py-2 text-xs font-medium text-blue-800 sm:mb-4 sm:px-4 sm:py-3 sm:text-sm">
                     Pick the image you want to keep for this page.
                   </p>
                 )}
@@ -702,32 +728,32 @@ function Preview() {
                     <img
                       src={images[safeImageIndex]}
                       alt={`Page ${pageIndex + 1} - Image ${safeImageIndex + 1}`}
-                      className="w-full aspect-[4/3] object-contain rounded-xl border-4 border-blue-200 transition-opacity duration-300"
+                      className="aspect-[4/5] w-full rounded-xl border-4 border-blue-200 object-contain transition-opacity duration-300 sm:aspect-[4/3]"
                     />
 
                     {images.length > 1 && (
                       <>
                         <button
                           onClick={() => handleImageNavigation(pageIndex, "prev")}
-                          className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full transition-opacity duration-300 hover:bg-opacity-70"
+                          className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/55 p-1.5 text-white transition-opacity duration-300 hover:bg-black/70 sm:p-2"
                           aria-label="Previous image"
                         >
-                          <ChevronLeftIcon className="h-5 w-5" />
+                          <ChevronLeftIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                         </button>
 
                         <button
                           onClick={() => handleImageNavigation(pageIndex, "next")}
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full transition-opacity duration-300 hover:bg-opacity-70"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/55 p-1.5 text-white transition-opacity duration-300 hover:bg-black/70 sm:p-2"
                           aria-label="Next image"
                         >
-                          <ChevronRightIcon className="h-5 w-5" />
+                          <ChevronRightIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                         </button>
                       </>
                     )}
                   </div>
 
                   {images.length > 1 && (
-                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+                    <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2 sm:bottom-4">
                       {images.map((_, imageIndex) => (
                         <button
                           key={imageIndex}
@@ -745,7 +771,7 @@ function Preview() {
                 </div>
 
                 {images.length > 1 && (
-                  <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-5 sm:gap-4">
                     {images.map((imageUrl, imageIndex) => {
                       const isSelected = imageIndex === safeImageIndex;
 
@@ -756,7 +782,8 @@ function Preview() {
                           onClick={() =>
                             updateSelectedImage(pageIndex, imageIndex)
                           }
-                          className={`overflow-hidden rounded-2xl border-2 text-left transition-all duration-200 ${
+                          aria-pressed={isSelected}
+                          className={`min-w-0 overflow-hidden rounded-2xl border-2 text-left transition-all duration-200 ${
                             isSelected
                               ? "border-blue-600 bg-blue-50 shadow-lg"
                               : "border-gray-200 bg-white hover:border-blue-300"
@@ -765,14 +792,14 @@ function Preview() {
                           <img
                             src={imageUrl}
                             alt={`Page ${pageIndex + 1} option ${imageIndex + 1}`}
-                            className="h-32 w-full object-cover"
+                            className="h-24 w-full object-cover sm:h-32"
                           />
-                          <div className="flex items-center justify-between px-4 py-3">
-                            <span className="font-semibold text-gray-800">
+                          <div className="flex items-center justify-between gap-2 px-3 py-2.5 sm:px-4 sm:py-3">
+                            <span className="truncate text-sm font-semibold text-gray-800 sm:text-base">
                               Choice {imageIndex + 1}
                             </span>
                             <span
-                              className={`rounded-full px-3 py-1 text-xs font-bold ${
+                              className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold sm:px-3 sm:text-xs ${
                                 isSelected
                                   ? "bg-blue-600 text-white"
                                   : "bg-gray-100 text-gray-600"
@@ -787,13 +814,13 @@ function Preview() {
                   </div>
                 )}
 
-                <p className="mt-6 text-gray-800 text-lg font-medium text-center px-4">
+                <p className="mt-4 px-2 text-center text-base font-medium text-gray-800 sm:mt-6 sm:px-4 sm:text-lg">
                   {page.scene?.replace(/{kid}/gi, childName || "your child") ||
                     `Page ${pageIndex + 1} content`}
                 </p>
 
                 {images.length > 1 && (
-                  <p className="mt-2 text-center text-sm text-gray-500 md:hidden">
+                  <p className="mt-2 text-center text-xs text-gray-500 sm:hidden">
                     Swipe to see the other choice
                   </p>
                 )}
@@ -804,25 +831,25 @@ function Preview() {
           {missingPageNumbers.map((pageNumber) => (
             <div
               key={`pending-${pageNumber}`}
-              className="bg-white rounded-xl shadow-lg p-6 sm:p-8 text-center"
+              className="rounded-2xl bg-white p-5 text-center shadow-lg sm:p-8"
             >
               <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-b-2 border-blue-500"></div>
-              <h2 className="text-xl font-bold text-blue-900">
+              <h2 className="text-lg font-bold text-blue-900 sm:text-xl">
                 Page {pageNumber}
               </h2>
-              <p className="mt-3 text-gray-600">
+              <p className="mt-3 text-sm text-gray-600 sm:text-base">
                 Creating this page...
               </p>
             </div>
           ))}
 
           {showPaymentGate && (
-            <div className="bg-white rounded-xl shadow-lg p-8 text-center border-2 border-dashed border-gray-300">
-              <h2 className="text-2xl font-bold text-blue-900 mb-4">
+            <div className="rounded-2xl border-2 border-dashed border-gray-300 bg-white p-6 text-center shadow-lg sm:p-8">
+              <h2 className="mb-4 text-xl font-bold text-blue-900 sm:text-2xl">
                 Unlock the Full Book
               </h2>
 
-              <p className="text-gray-600 mb-6">
+              <p className="mb-6 text-sm text-gray-600 sm:text-base">
                 The first 2 pages are ready. Complete payment to generate the
                 remaining pages and final PDF.
               </p>
@@ -837,14 +864,14 @@ function Preview() {
           )}
 
           {backCoverUrl && (
-            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
-              <h2 className="text-xl font-bold text-blue-900 mb-4">
+            <div className="rounded-2xl bg-white p-3 shadow-lg sm:p-6">
+              <h2 className="mb-3 text-lg font-bold text-blue-900 sm:mb-4 sm:text-xl">
                 Back Cover
               </h2>
               <img
                 src={backCoverUrl}
                 alt="Back Cover"
-                className="w-full aspect-[4/3] object-contain"
+                className="aspect-[4/5] w-full rounded-xl object-contain sm:aspect-[4/3]"
               />
             </div>
           )}
@@ -852,14 +879,14 @@ function Preview() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white shadow-lg z-50">
-        <div className="max-w-2xl mx-auto">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white/95 px-3 py-3 shadow-lg backdrop-blur sm:px-4 sm:py-4">
+        <div className="mx-auto max-w-3xl">
           {pdfUrl ? (
             <a
               href={pdfUrl}
               target="_blank"
               rel="noreferrer"
-              className="block w-full bg-green-600 text-white text-center py-4 rounded-full text-xl font-semibold hover:bg-green-700"
+              className="block w-full rounded-full bg-green-600 py-3.5 text-center text-base font-semibold text-white hover:bg-green-700 sm:py-4 sm:text-xl"
             >
               Download Final PDF
             </a>
@@ -868,43 +895,43 @@ function Preview() {
               type="button"
               onClick={handleGenerateFinalPdf}
               disabled={isGeneratingPdf}
-              className="block w-full rounded-full bg-blue-600 py-4 text-center text-xl font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+              className="block w-full rounded-full bg-blue-600 py-3.5 text-center text-base font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300 sm:py-4 sm:text-xl"
             >
               {isGeneratingPdf ? "Generating PDF..." : "Generate PDF"}
             </button>
           ) : isFinalPdfGenerating ? (
-            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-blue-800 font-medium">
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm font-medium text-blue-800 sm:text-base">
               Preparing your PDF...
             </div>
           ) : !isPaid && !isEmailPreview ? (
             !allPagesLoaded ? (
               canSendPreview ? (
                 <div className="bg-white rounded-xl p-4 border border-gray-200">
-                  <h3 className="text-lg font-bold text-blue-900 mb-3 text-center">
+                  <h3 className="mb-3 text-center text-base font-bold text-blue-900 sm:text-lg">
                     Don&apos;t have time to wait?
                   </h3>
                   <Link
                     to={handleEmailPreview()}
-                    className="block w-full bg-blue-600 text-white text-center py-3 rounded-lg text-lg font-semibold hover:bg-blue-700"
+                    className="block w-full rounded-lg bg-blue-600 py-3 text-center text-base font-semibold text-white hover:bg-blue-700 sm:text-lg"
                   >
                     Email Me The Preview Instead
                   </Link>
                 </div>
               ) : previewEmailSent ? (
-                <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-center text-green-700 font-medium">
+                <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-center text-sm font-medium text-green-700 sm:text-base">
                   Preview request already submitted.
                 </div>
               ) : null
             ) : (
               <Link
                 to={handleSavePreview()}
-                className="block w-full bg-secondary text-white text-center py-4 rounded-full text-xl font-semibold hover:bg-blue-600"
+                className="block w-full rounded-full bg-secondary py-3.5 text-center text-base font-semibold text-white hover:bg-blue-600 sm:py-4 sm:text-xl"
               >
                 Save Preview & Show Price
               </Link>
             )
           ) : isPaid ? (
-            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-blue-800 font-medium">
+            <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm font-medium text-blue-800 sm:text-base">
               {nextPendingPageNumber
                 ? `Creating page ${nextPendingPageNumber}...`
                 : "Creating your book..."}

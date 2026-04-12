@@ -61,9 +61,11 @@ function Frontpage() {
           <div className="relative reveal-up delay-150">
             <div className="absolute inset-0 rounded-[2.8rem] bg-sky-300/20 blur-2xl float-drift" />
             <div className="relative rounded-[2.5rem] bg-white/[0.82] backdrop-blur-2xl shadow-[0_30px_90px_rgba(15,23,42,0.16)] p-8 sm:p-12 border border-white/80">
-              <p className="uppercase tracking-[0.32em] text-xs sm:text-sm text-blue-700 font-bold mb-4">
-                Personalized Story Experience
-              </p>
+              <div className="inline-flex items-center rounded-[1.7rem] bg-white/82 px-5 py-3 border border-white/80 shadow-[0_16px_38px_rgba(14,116,144,0.12)] mb-6">
+                <p className="text-sm sm:text-base font-bold uppercase tracking-[0.26em] text-[#0b2559]">
+                  Storybook Adventures
+                </p>
+              </div>
               <h1 className="text-4xl xl:text-6xl font-black text-[#08193f] mb-6 leading-[1.06]">
                 Turn your child into the{" "}
                 <span className="text-transparent bg-clip-text bg-[linear-gradient(120deg,#0c4a6e,#2563eb,#0891b2)]">

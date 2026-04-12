@@ -6,7 +6,16 @@ function Footer() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(56,189,248,0.2),transparent_35%),radial-gradient(circle_at_80%_70%,rgba(59,130,246,0.2),transparent_40%)]" />
       <div className="relative max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
         <div>
-          <h3 className="text-3xl font-black mb-6">Storybook</h3>
+          <div className="flex items-center gap-4 mb-6">
+            <div className="rounded-2xl bg-white/12 p-1.5 border border-white/15">
+              <img
+                src="/guidelines/superdadlogo.png"
+                alt="Storybook logo"
+                className="h-14 w-14 rounded-[0.9rem] object-cover"
+              />
+            </div>
+            <h3 className="text-3xl font-black">Storybook</h3>
+          </div>
           <nav className="space-y-3">
             <Link to="/about" className="block text-blue-100 hover:text-cyan-300 transition-colors">
               About Us

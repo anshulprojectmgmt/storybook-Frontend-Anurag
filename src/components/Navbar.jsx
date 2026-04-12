@@ -18,12 +18,18 @@ function Navbar() {
         <div className="flex justify-between items-center h-20">
           <Link
             to="/"
-            className="group inline-flex items-center gap-2 text-3xl font-black tracking-tight transition-transform duration-300 hover:scale-[1.02]"
+            className="group inline-flex items-center gap-3 transition-transform duration-300 hover:scale-[1.02]"
           >
-            <span className="bg-gradient-to-r from-[#0b2559] via-[#1d4ed8] to-[#0ea5e9] bg-clip-text text-transparent drop-shadow-[0_3px_12px_rgba(29,78,216,0.25)]">
+            <div className="rounded-2xl bg-white/80 p-1.5 border border-white/80 shadow-[0_12px_24px_rgba(30,64,175,0.12)]">
+              <img
+                src="/guidelines/superdadlogo.png"
+                alt="Storybook logo"
+                className="h-11 w-11 sm:h-12 sm:w-12 rounded-[0.9rem] object-cover"
+              />
+            </div>
+            <span className="text-2xl sm:text-3xl font-black tracking-tight bg-gradient-to-r from-[#0b2559] via-[#1d4ed8] to-[#0ea5e9] bg-clip-text text-transparent drop-shadow-[0_3px_12px_rgba(29,78,216,0.25)]">
               Storybook
             </span>
-            <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 opacity-80 group-hover:opacity-100 shadow-[0_0_14px_rgba(14,165,233,0.6)]" />
           </Link>
 
           <div className="hidden md:flex items-center gap-2 rounded-full bg-white/75 px-3 py-2 border border-blue-100 shadow-sm">

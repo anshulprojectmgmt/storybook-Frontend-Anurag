@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import UnlockPaymentModal from "../components/UnlockPaymentModal";
-import { apiUrl } from "../config/api";
+import { useAuth } from "../context/AuthContext";
+import { apiRequest } from "../utils/api";
 
 export default function Checkout() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const { isAuthenticated, token, user } = useAuth();
 
   const req_id = params.get("request_id");
   const book_id = params.get("book_id");
@@ -28,26 +29,43 @@ export default function Checkout() {
   });
   const [kidName, setKidname] = useState("");
 
+  useEffect(() => {
+    setForm((current) => ({
+      ...current,
+      name: current.name || user?.name || "",
+      email: current.email || user?.email || "",
+    }));
+  }, [user]);
+
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
   const saveAndPay = async () => {
+    if (!isAuthenticated) {
+      navigate("/login", { replace: true });
+      return;
+    }
+
     setLoading(true);
     try {
-      await axios.post(apiUrl("/api/checkout/save-address"), {
-        req_id,
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        address: {
-          line1: form.line1,
-          line2: form.line2,
-          city: form.city,
-          state: form.state,
-          pincode: form.pincode,
-          country: form.country,
+      await apiRequest("/api/checkout/save-address", {
+        method: "POST",
+        token,
+        body: {
+          req_id,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          address: {
+            line1: form.line1,
+            line2: form.line2,
+            city: form.city,
+            state: form.state,
+            pincode: form.pincode,
+            country: form.country,
+          },
+          kidName,
         },
-        kidName,
       });
 
       setShowPayment(true);
@@ -103,7 +121,12 @@ export default function Checkout() {
       {showPayment && (
         <UnlockPaymentModal
           req_id={req_id}
+          book_id={book_id}
           amount={book_Price}
+          token={token}
+          isAuthenticated={isAuthenticated}
+          couponAvailable={false}
+          onRequireAuth={() => navigate("/login")}
           onClose={() => setShowPayment(false)}
           onSuccess={() => {
             const previewParams = new URLSearchParams({

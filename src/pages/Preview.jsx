@@ -1,12 +1,24 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import useChildStore from "../store/childStore";
 import axios from "axios";
-import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
 import UnlockPaymentModal from "../components/UnlockPaymentModal";
 import { apiUrl } from "../config/api";
+import { useAuth } from "../context/AuthContext";
+import { useCouponAccess } from "../context/CouponContext";
+import { apiRequest, authHeader } from "../utils/api";
+import {
+  clearAuthIntent,
+  getAuthIntent,
+  saveAuthIntent,
+} from "../utils/authIntent";
 
 function getPageImages(page) {
   if (Array.isArray(page?.image_options) && page.image_options.length > 0) {
@@ -18,11 +30,31 @@ function getPageImages(page) {
   return Array.isArray(page?.image_urls) ? page.image_urls : [];
 }
 
-const FREE_PREVIEW_PAGE_COUNT = 2;
 const PAGE_GENERATION_CONCURRENCY = 2;
+
+function getInitialFreePreviewPageCount() {
+  const parsedValue = Number.parseInt(
+    import.meta.env.VITE_FREE_PREVIEW_PAGE_COUNT,
+    10,
+  );
+
+  if (!Number.isFinite(parsedValue) || parsedValue < 1) {
+    return 1;
+  }
+
+  return parsedValue;
+}
 
 function Preview() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, token } = useAuth();
+  const {
+    publicStatus,
+    refreshAccess,
+    refreshPublicStatus,
+  } = useCouponAccess();
   const openPayment = searchParams.get("openPayment") === "true";
   const paidFromRedirect = searchParams.get("paid") === "true";
 
@@ -50,6 +82,13 @@ function Preview() {
   const [retryAfterPayment, setRetryAfterPayment] = useState(0);
   const [bookPrice, setBookPrice] = useState(100);
   const [isPaid, setIsPaid] = useState(paidFromRedirect);
+  const [fullAccess, setFullAccess] = useState(paidFromRedirect);
+  const [freePreviewPageCount, setFreePreviewPageCount] = useState(
+    getInitialFreePreviewPageCount,
+  );
+  const [unlockIntentMode, setUnlockIntentMode] = useState("payment");
+  const [unlockCouponAvailable, setUnlockCouponAvailable] = useState(false);
+  const [couponToast, setCouponToast] = useState(null);
   const [previewEmailSent, setPreviewEmailSent] = useState(false);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [frontCoverUrl, setFrontCoverUrl] = useState(null);
@@ -63,13 +102,15 @@ function Preview() {
   const [pageData, setPageData] = useState([]);
   const [currentImageIndexes, setCurrentImageIndexes] = useState({});
   const [allPagesLoaded, setAllPagesLoaded] = useState(false);
+  const [hasLoadedBookStatus, setHasLoadedBookStatus] = useState(false);
   const [generationRetryTick, setGenerationRetryTick] = useState(0);
   const pageDataRef = useRef([]);
   const inFlightPagesRef = useRef(new Set());
+  const handledAuthIntentRef = useRef(false);
 
-  const unlockedPageLimit = isPaid
+  const unlockedPageLimit = fullAccess
     ? totalPages
-    : Math.min(totalPages, FREE_PREVIEW_PAGE_COUNT);
+    : Math.min(totalPages, freePreviewPageCount);
   const loadedPages = Array.from(
     { length: unlockedPageLimit },
     (_, index) => pageData[index],
@@ -89,13 +130,14 @@ function Preview() {
     ? Math.min((loadedPages / unlockedPageLimit) * 100, 100)
     : 0;
   const showInitialLoader = loadedPages === 0 && missingPageNumbers.length > 0;
-  const canSendPreview = !isPaid && !isEmailPreview && !previewEmailSent;
+  const canSendPreview = !fullAccess && !isEmailPreview && !previewEmailSent;
   const showPaymentGate =
-    !isPaid &&
-    totalPages > FREE_PREVIEW_PAGE_COUNT &&
-    loadedPages >= Math.min(totalPages, FREE_PREVIEW_PAGE_COUNT);
+    hasLoadedBookStatus &&
+    !fullAccess &&
+    totalPages > freePreviewPageCount &&
+    loadedPages >= Math.min(totalPages, freePreviewPageCount);
   const isFinalSelectionReady =
-    isPaid &&
+    fullAccess &&
     allPagesLoaded &&
     Boolean(frontCoverUrl) &&
     Boolean(backCoverUrl) &&
@@ -104,10 +146,134 @@ function Preview() {
     finalPdfStatus === "selection_ready";
   const isFinalPdfGenerating =
     !pdfUrl && (isGeneratingPdf || finalPdfStatus === "generating");
+  const currentPreviewUrl = `${location.pathname}${location.search}`;
+  const freePreviewPageLabel = `${freePreviewPageCount} ${
+    freePreviewPageCount === 1 ? "page" : "pages"
+  }`;
+
+  const applyAccessFields = useCallback((data = {}) => {
+    const nextFreePreviewPageCount = Number.parseInt(
+      data.free_preview_page_count,
+      10,
+    );
+
+    if (
+      Number.isFinite(nextFreePreviewPageCount) &&
+      nextFreePreviewPageCount >= 1
+    ) {
+      setFreePreviewPageCount(nextFreePreviewPageCount);
+    }
+
+    if (typeof data.full_access === "boolean") {
+      setFullAccess(data.full_access);
+    } else if (typeof data.paid === "boolean") {
+      setFullAccess(Boolean(data.paid));
+    }
+
+    if (typeof data.paid === "boolean") {
+      setIsPaid(data.paid);
+    }
+  }, []);
+
+  const formatCouponDate = useCallback((value) => {
+    if (!value) {
+      return "";
+    }
+
+    return new Intl.DateTimeFormat("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(new Date(value));
+  }, []);
 
   useEffect(() => {
     pageDataRef.current = pageData;
   }, [pageData]);
+
+  useEffect(() => {
+    refreshPublicStatus();
+  }, [refreshPublicStatus]);
+
+  useEffect(() => {
+    setUnlockCouponAvailable(Boolean(publicStatus.couponAvailable));
+  }, [publicStatus.couponAvailable]);
+
+  useEffect(() => {
+    if (!couponToast) {
+      return undefined;
+    }
+
+    const timeoutId = setTimeout(() => {
+      setCouponToast(null);
+    }, 4000);
+
+    return () => clearTimeout(timeoutId);
+  }, [couponToast]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !token || !request_id || !book_id) {
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    const claimPreview = async () => {
+      try {
+        const response = await apiRequest("/api/preview/claim", {
+          method: "POST",
+          token,
+          body: {
+            req_id: request_id,
+            book_id,
+            kidName: childName,
+          },
+        });
+
+        if (!isMounted) {
+          return;
+        }
+
+        applyAccessFields(response);
+
+        const intent = getAuthIntent();
+        const samePreview =
+          intent &&
+          (intent.returnTo === currentPreviewUrl ||
+            (intent.req_id === request_id && intent.book_id === book_id));
+
+        if (!handledAuthIntentRef.current && samePreview) {
+          handledAuthIntentRef.current = true;
+          const status = await refreshPublicStatus();
+          const couponAvailable = Boolean(status?.couponAvailable);
+
+          setUnlockCouponAvailable(couponAvailable);
+          setUnlockIntentMode(
+            intent.action === "coupon" && couponAvailable ? "coupon" : "payment",
+          );
+          setShowPayment(true);
+          clearAuthIntent();
+        }
+      } catch (error) {
+        console.error("Error claiming preview:", error);
+      }
+    };
+
+    claimPreview();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    applyAccessFields,
+    book_id,
+    childName,
+    currentPreviewUrl,
+    isAuthenticated,
+    request_id,
+    refreshPublicStatus,
+    token,
+  ]);
 
   useEffect(() => {
     if (!isFinalSelectionReady || hasShownFinalSelectionToast) {
@@ -131,10 +297,10 @@ function Preview() {
 
     const intervalId = setInterval(() => {
       setGenerationRetryTick((count) => count + 1);
-    }, isPaid ? 8000 : 12000);
+    }, fullAccess ? 8000 : 12000);
 
     return () => clearInterval(intervalId);
-  }, [allPagesLoaded, book_id, isPaid, request_id]);
+  }, [allPagesLoaded, book_id, fullAccess, request_id]);
 
   useEffect(() => {
     if (!request_id) {
@@ -147,12 +313,14 @@ function Preview() {
       try {
         const res = await axios.get(apiUrl("/api/photo/get_all_pages"), {
           params: { req_id: request_id, book_id },
+          headers: authHeader(token),
         });
 
         if (!isMounted) {
           return;
         }
 
+        setHasLoadedBookStatus(true);
         setFrontCoverUrl(res.data.front_cover_url || null);
         setBackCoverUrl(res.data.back_cover_url || null);
         setPreviewEmailSent(Boolean(res.data.preview_email_sent));
@@ -190,9 +358,7 @@ function Preview() {
           });
         }
 
-        if (typeof res.data.paid === "boolean") {
-          setIsPaid(res.data.paid);
-        }
+        applyAccessFields(res.data);
 
         if (res.data.pdf_url) {
           setPdfUrl(res.data.pdf_url);
@@ -210,7 +376,7 @@ function Preview() {
       isMounted = false;
       clearInterval(intervalId);
     };
-  }, [book_id, request_id]);
+  }, [applyAccessFields, book_id, request_id, token]);
 
   useEffect(() => {
     const fetchPrice = async () => {
@@ -224,19 +390,41 @@ function Preview() {
   }, [book_id]);
 
   useEffect(() => {
-    if (openPayment && bookPrice && !isPaid) {
-      setShowPayment(true);
+    if (!openPayment || !bookPrice || fullAccess) {
+      return;
     }
-  }, [openPayment, bookPrice, isPaid]);
+
+    let isMounted = true;
+
+    const openUnlockFromUrl = async () => {
+      const status = await refreshPublicStatus();
+      const couponAvailable = Boolean(status?.couponAvailable);
+
+      if (!isMounted) {
+        return;
+      }
+
+      setUnlockCouponAvailable(couponAvailable);
+      setUnlockIntentMode(couponAvailable ? "coupon" : "payment");
+      setShowPayment(true);
+    };
+
+    openUnlockFromUrl();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [bookPrice, fullAccess, openPayment, refreshPublicStatus]);
 
   useEffect(() => {
     const fetchPaymentStatus = async () => {
       try {
         const res = await axios.get(apiUrl("/api/payment/status"), {
           params: { req_id: request_id },
+          headers: authHeader(token),
         });
 
-        setIsPaid(res.data.paid);
+        applyAccessFields(res.data);
         setPreviewEmailSent(Boolean(res.data.preview_email_sent));
         setFinalPdfStatus(res.data.final_pdf_status || "not_ready");
         if (res.data.pdf_url) {
@@ -251,7 +439,7 @@ function Preview() {
     if (request_id) {
       fetchPaymentStatus();
     }
-  }, [request_id, retryAfterPayment]);
+  }, [applyAccessFields, request_id, retryAfterPayment, token]);
 
   const pollUntilDone = async (
     req_id,
@@ -267,6 +455,7 @@ function Preview() {
       try {
         const res = await axios.get(apiUrl("/api/photo/check_generation_status"), {
           params: { req_id, job_id, page_number, book_id },
+          headers: authHeader(token),
         });
 
         const data = res.data;
@@ -310,6 +499,7 @@ function Preview() {
               page_number: pageNumber,
               childName,
             },
+            headers: authHeader(token),
           },
         );
 
@@ -341,7 +531,7 @@ function Preview() {
         return null;
       }
     },
-    [request_id, childName, isPaid],
+    [request_id, childName, token],
   );
 
   const storePageResult = useCallback((pageResult) => {
@@ -415,7 +605,7 @@ function Preview() {
       await Promise.allSettled(Array.from({ length: workerCount }, () => worker()));
     };
 
-    if (request_id && book_id) {
+    if (hasLoadedBookStatus && request_id && book_id) {
       loadPagesInParallel();
     }
 
@@ -427,6 +617,7 @@ function Preview() {
     fetchPageData,
     book_id,
     generationRetryTick,
+    hasLoadedBookStatus,
     request_id,
     retryAfterPayment,
     storePageResult,
@@ -474,6 +665,8 @@ function Preview() {
           req_id: page.req_id,
           job_id: page.job_id,
           image_id: imageIndex,
+        }, {
+          headers: authHeader(token),
         });
 
         if (response.data?.pdf_url) {
@@ -487,7 +680,7 @@ function Preview() {
         console.error("Error updating page image:", error);
       }
     },
-    [pageData],
+    [pageData, token],
   );
 
   const handleImageNavigation = useCallback(
@@ -539,6 +732,63 @@ function Preview() {
     [handleImageNavigation],
   );
 
+  const handleRequireAuth = useCallback(
+    (action = "unlock") => {
+      saveAuthIntent({
+        returnTo: currentPreviewUrl,
+        action,
+        req_id: request_id,
+        book_id,
+      });
+      navigate("/login", { state: { from: currentPreviewUrl } });
+    },
+    [book_id, currentPreviewUrl, navigate, request_id],
+  );
+
+  const openUnlockModal = useCallback(async () => {
+    const status = await refreshPublicStatus();
+    const couponAvailable = Boolean(status?.couponAvailable);
+
+    setUnlockCouponAvailable(couponAvailable);
+    setUnlockIntentMode(couponAvailable ? "coupon" : "payment");
+    setShowPayment(true);
+  }, [refreshPublicStatus]);
+
+  const handleUnlockSuccess = useCallback(() => {
+    setShowPayment(false);
+    setIsPaid(true);
+    setFullAccess(true);
+    setRetryAfterPayment((count) => count + 1);
+    setGenerationRetryTick((count) => count + 1);
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete("openPayment");
+    window.history.replaceState({}, "", url.toString());
+  }, []);
+
+  const handleCouponSuccess = useCallback(
+    async (response) => {
+      setShowPayment(false);
+      setIsPaid(false);
+      setFullAccess(true);
+      setRetryAfterPayment((count) => count + 1);
+      setGenerationRetryTick((count) => count + 1);
+
+      if (response?.access) {
+        const validTill = response.access.accessEndsAt
+          ? formatCouponDate(response.access.accessEndsAt)
+          : "";
+
+        setCouponToast(
+          `SURPRISE100 applied! Valid till ${validTill}. You can generate 3 storybooks per day for free.`,
+        );
+      }
+
+      await refreshAccess();
+    },
+    [formatCouponDate, refreshAccess],
+  );
+
   const handleSavePreview = () => {
     const saveParams = new URLSearchParams({
       request_id,
@@ -573,6 +823,8 @@ function Preview() {
       const response = await axios.post(apiUrl("/api/photo/generate_final_pdf"), {
         req_id: request_id,
         book_id,
+      }, {
+        headers: authHeader(token),
       });
 
       setFinalPdfStatus(response.data?.final_pdf_status || "ready");
@@ -658,10 +910,26 @@ function Preview() {
   return (
     <div className="min-h-screen bg-gray-50 pb-40 sm:pb-32">
       {showFinalSelectionToast && (
-        <div className="fixed left-1/2 top-4 z-[60] w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 rounded-2xl bg-blue-900 px-4 py-3 text-center text-sm font-medium text-white shadow-2xl sm:top-6 sm:text-base">
-          Your book is ready. Pick your favorite page images now. If you do
-          nothing, we&apos;ll create the PDF in 3 minutes using the current
-          selections.
+        <div className="fixed left-1/2 top-4 z-[60] w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 rounded-2xl bg-blue-900 px-4 py-3 pr-11 text-center text-sm font-medium text-white shadow-2xl sm:top-6 sm:text-base">
+          <p>
+            Your book is ready. Pick your favorite page images now. If you do
+            nothing, we&apos;ll create the PDF in 3 minutes using the current
+            selections.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowFinalSelectionToast(false)}
+            className="absolute right-2 top-2 rounded-full p-1.5 text-white/85 transition hover:bg-white/15 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/70"
+            aria-label="Dismiss book ready notification"
+          >
+            <XMarkIcon className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+
+      {couponToast && (
+        <div className="fixed left-1/2 top-4 z-[70] w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 rounded-2xl bg-blue-700 px-4 py-3 text-center text-sm font-bold text-white shadow-2xl sm:top-6 sm:text-base">
+          {couponToast}
         </div>
       )}
 
@@ -690,7 +958,7 @@ function Preview() {
             </div>
           )}
 
-          {pageData.map((page, pageIndex) => {
+          {pageData.slice(0, unlockedPageLimit).map((page, pageIndex) => {
             if (!page) {
               return null;
             }
@@ -846,20 +1114,52 @@ function Preview() {
           {showPaymentGate && (
             <div className="rounded-2xl border-2 border-dashed border-gray-300 bg-white p-6 text-center shadow-lg sm:p-8">
               <h2 className="mb-4 text-xl font-bold text-blue-900 sm:text-2xl">
-                Unlock the Full Book
+                {isAuthenticated ? "Unlock the Full Book" : "Log in to Unlock the Full Book"}
               </h2>
 
               <p className="mb-6 text-sm text-gray-600 sm:text-base">
-                The first 2 pages are ready. Complete payment to generate the
-                remaining pages and final PDF.
+                {isAuthenticated
+                  ? "Your preview is ready. Use an active coupon or pay once to unlock the rest of the book."
+                  : `Your first ${freePreviewPageLabel} ${
+                      freePreviewPageCount === 1 ? "is" : "are"
+                    } ready. Log in or create an account to unlock the rest of the book.`}
               </p>
 
-              <Link
-                to={`/checkout?request_id=${request_id}&book_id=${book_id}&book_Price=${bookPrice}`}
-                className="bg-blue-600 text-white px-8 py-4 rounded-full inline-block"
-              >
-                Proceed to Checkout
-              </Link>
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={openUnlockModal}
+                  className="inline-flex rounded-full bg-blue-600 px-8 py-4 font-bold text-white shadow-lg transition hover:bg-blue-700"
+                >
+                  {publicStatus.couponAvailable
+                    ? "Apply Coupon or Pay"
+                    : "Pay & Unlock"}
+                </button>
+              ) : (
+                <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
+                  <button
+                    type="button"
+                    onClick={() => handleRequireAuth("unlock")}
+                    className="rounded-full bg-blue-600 px-8 py-4 font-bold text-white shadow-lg transition hover:bg-blue-700"
+                  >
+                    Log in to Unlock
+                  </button>
+                  <Link
+                    to="/signup"
+                    onClick={() => {
+                      saveAuthIntent({
+                        returnTo: currentPreviewUrl,
+                        action: "unlock",
+                        req_id: request_id,
+                        book_id,
+                      });
+                    }}
+                    className="rounded-full border border-blue-200 bg-blue-50 px-8 py-4 font-bold text-blue-700 transition hover:bg-blue-100"
+                  >
+                    Create Account
+                  </Link>
+                </div>
+              )}
             </div>
           )}
 
@@ -903,8 +1203,44 @@ function Preview() {
             <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm font-medium text-blue-800 sm:text-base">
               Preparing your PDF...
             </div>
-          ) : !isPaid && !isEmailPreview ? (
-            !allPagesLoaded ? (
+          ) : !fullAccess && !isEmailPreview ? (
+            showPaymentGate ? (
+              isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={openUnlockModal}
+                  className="block w-full rounded-full bg-blue-600 py-3.5 text-center text-base font-semibold text-white hover:bg-blue-700 sm:py-4 sm:text-xl"
+                >
+                  {publicStatus.couponAvailable
+                    ? "Apply Coupon or Pay"
+                    : "Pay & Unlock"}
+                </button>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleRequireAuth("unlock")}
+                    className="rounded-full bg-blue-600 py-3.5 text-center text-sm font-semibold text-white hover:bg-blue-700 sm:py-4 sm:text-lg"
+                  >
+                    Log in to Unlock
+                  </button>
+                  <Link
+                    to="/signup"
+                    onClick={() => {
+                      saveAuthIntent({
+                        returnTo: currentPreviewUrl,
+                        action: "unlock",
+                        req_id: request_id,
+                        book_id,
+                      });
+                    }}
+                    className="rounded-full border border-blue-200 bg-blue-50 py-3.5 text-center text-sm font-semibold text-blue-700 hover:bg-blue-100 sm:py-4 sm:text-lg"
+                  >
+                    Create Account
+                  </Link>
+                </div>
+              )
+            ) : !allPagesLoaded ? (
               canSendPreview ? (
                 <div className="bg-white rounded-xl p-4 border border-gray-200">
                   <h3 className="mb-3 text-center text-base font-bold text-blue-900 sm:text-lg">
@@ -930,7 +1266,7 @@ function Preview() {
                 Save Preview & Show Price
               </Link>
             )
-          ) : isPaid ? (
+          ) : fullAccess ? (
             <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-center text-sm font-medium text-blue-800 sm:text-base">
               {nextPendingPageNumber
                 ? `Creating page ${nextPendingPageNumber}...`
@@ -943,17 +1279,18 @@ function Preview() {
       {showPayment && (
         <UnlockPaymentModal
           req_id={request_id}
+          book_id={book_id}
           amount={bookPrice}
+          token={token}
+          isAuthenticated={isAuthenticated}
+          couponAvailable={
+            unlockCouponAvailable || Boolean(publicStatus.couponAvailable)
+          }
+          initialMode={unlockIntentMode}
+          onRequireAuth={handleRequireAuth}
           onClose={() => setShowPayment(false)}
-          onSuccess={() => {
-            setShowPayment(false);
-            setIsPaid(true);
-            setRetryAfterPayment((count) => count + 1);
-
-            const url = new URL(window.location.href);
-            url.searchParams.delete("openPayment");
-            window.history.replaceState({}, "", url.toString());
-          }}
+          onSuccess={handleUnlockSuccess}
+          onCouponSuccess={handleCouponSuccess}
         />
       )}
     </div>

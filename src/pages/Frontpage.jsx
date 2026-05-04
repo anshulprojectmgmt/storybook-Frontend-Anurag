@@ -1,184 +1,215 @@
 import { Link } from "react-router-dom";
+import {
+  ArrowUpTrayIcon,
+  BookOpenIcon,
+  TruckIcon,
+} from "@heroicons/react/24/outline";
 import BooksList from "./BooksList";
 
-function Frontpage() {
-  const highlights = [
-    {
-      title: "Personalized Adventures",
-      text: "Your child becomes the lead character in every page and scene.",
-    },
-    {
-      title: "Fast to Create",
-      text: "Build a complete custom storybook in just a few guided steps.",
-    },
-    {
-      title: "Keepsake Quality",
-      text: "Memorable artwork and storytelling families love to revisit.",
-    },
-  ];
+const storybookWorkSteps = [
+  {
+    number: "1",
+    title: "Pick Storybook",
+    variant: "pick",
+    accent: "bg-blue-100 text-blue-950",
+  },
+  {
+    number: "2",
+    title: "Add your Child's Picture",
+    variant: "upload",
+    accent: "bg-cyan-100 text-blue-950",
+  },
+  {
+    number: "3",
+    title: "Preview & Order",
+    variant: "preview",
+    accent: "bg-sky-100 text-blue-950",
+  },
+  {
+    number: "4",
+    title: "Your story is printed with care and delivered with joy.",
+    variant: "delivery",
+    accent: "bg-indigo-100 text-blue-950",
+  },
+];
 
-  const premiumTags = [
-    "Photo-to-Character Magic",
-    "Guided 3-Step Creation",
-    "Gift-Ready Story Design",
-  ];
+function StorybookStepArt({ variant }) {
+  if (variant === "pick") {
+    return (
+      <div className="relative flex h-full items-center justify-center">
+        <div className="absolute inset-x-4 top-7 h-24 rounded-[2rem] bg-white/80 shadow-[0_16px_36px_rgba(30,64,175,0.12)]" />
+        <div className="relative flex items-end justify-center gap-2">
+          {["-rotate-6", "scale-110", "rotate-6"].map((tilt, index) => (
+            <div
+              key={tilt}
+              className={`h-24 w-16 overflow-hidden rounded-xl border border-white/90 bg-white shadow-[0_10px_24px_rgba(30,64,175,0.18)] ${tilt}`}
+            >
+              <img
+                src="/guidelines/Cinderella.png"
+                alt={`Storybook cover option ${index + 1}`}
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            </div>
+          ))}
+        </div>
+        <BookOpenIcon className="absolute bottom-6 right-8 h-8 w-8 text-blue-600" />
+      </div>
+    );
+  }
+
+  if (variant === "upload") {
+    return (
+      <div className="relative flex h-full items-center justify-center">
+        <div className="absolute inset-x-5 top-8 h-28 rounded-[2rem] border-2 border-dashed border-blue-300 bg-white/82 shadow-[0_16px_36px_rgba(30,64,175,0.1)]" />
+        <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-[0_12px_30px_rgba(30,64,175,0.18)]">
+          <img
+            src="/guidelines/Cinderella.png"
+            alt="Child photo upload preview"
+            className="h-20 w-20 rounded-full object-cover"
+            loading="lazy"
+          />
+        </div>
+        <div className="absolute left-8 top-12 flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-[0_12px_24px_rgba(37,99,235,0.28)]">
+          <ArrowUpTrayIcon className="h-6 w-6" />
+        </div>
+      </div>
+    );
+  }
+
+  if (variant === "preview") {
+    return (
+      <div className="relative flex h-full items-center justify-center">
+        <div className="relative flex h-28 w-52 -rotate-3 overflow-hidden rounded-xl border border-blue-100 bg-white shadow-[0_16px_34px_rgba(15,23,42,0.2)]">
+          <div className="w-1/2 border-r border-blue-100 bg-sky-50 p-2">
+            <img
+              src="/guidelines/Cinderella.png"
+              alt="Storybook page preview"
+              className="h-full w-full rounded-lg object-cover"
+              loading="lazy"
+            />
+          </div>
+          <div className="flex w-1/2 flex-col justify-center gap-2 bg-white p-3">
+            <span className="h-2 rounded-full bg-blue-200" />
+            <span className="h-2 rounded-full bg-sky-200" />
+            <span className="h-2 w-2/3 rounded-full bg-blue-100" />
+          </div>
+        </div>
+        <div className="absolute bottom-5 right-9 rounded-full bg-white px-3 py-1 text-xs font-black text-blue-700 shadow-[0_8px_20px_rgba(30,64,175,0.16)]">
+          Ready
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen w-full">
-      <section className="relative w-full min-h-[92vh] px-6 py-20 overflow-hidden bg-[linear-gradient(130deg,#f7fbff_0%,#ecf6ff_45%,#f3f8ff_100%)]">
-        <div className="absolute inset-0">
-          <div className="absolute -top-40 -left-24 w-[560px] h-[560px] rounded-full bg-cyan-300/35 blur-[150px] float-drift" />
-          <div className="absolute top-10 right-0 w-[540px] h-[540px] rounded-full bg-blue-300/28 blur-[150px] float-drift-delayed" />
-          <div className="absolute -bottom-36 left-1/3 w-[460px] h-[460px] rounded-full bg-sky-200/45 blur-[150px]" />
-          <div className="absolute inset-0 hero-aurora" />
-          <div className="absolute inset-0 hero-grid opacity-45" />
-          <div className="absolute inset-0 hero-noise" />
-        </div>
+    <div className="relative flex h-full items-center justify-center">
+      <div className="relative h-28 w-44 rotate-[-7deg] overflow-hidden rounded-xl border border-white/90 bg-white shadow-[0_18px_38px_rgba(30,64,175,0.18)]">
+        <img
+          src="/guidelines/Cinderella.png"
+          alt="Printed storybook"
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+      </div>
+      <div className="absolute bottom-5 right-7 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-[0_14px_28px_rgba(37,99,235,0.3)]">
+        <TruckIcon className="h-7 w-7" />
+      </div>
+    </div>
+  );
+}
 
-        <div className="relative max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
-          <div className="relative reveal-up group">
-            <div className="absolute -inset-6 rounded-[2.7rem] bg-[conic-gradient(from_120deg_at_50%_50%,rgba(14,165,233,0.12),rgba(37,99,235,0.24),rgba(8,145,178,0.12),rgba(14,165,233,0.12))] blur-2xl" />
-            <div className="absolute -inset-0.5 rounded-[2.4rem] border border-white/60 bg-white/35 backdrop-blur-xl shadow-[0_35px_95px_rgba(8,47,73,0.22)]" />
-
-            <div className="relative rounded-[2.3rem] p-[2px] bg-gradient-to-br from-cyan-100 via-blue-300/85 to-blue-200">
-              <div className="relative rounded-[2.2rem] overflow-hidden bg-gradient-to-br from-white to-sky-50">
-                <img
-                  src="/guidelines/Cinderella.png"
-                  alt="Child storybook transformation preview"
-                  className="w-full h-fit object-contain image-pan px-2 sm:px-3 transition-transform duration-700 group-hover:scale-[1.02]"
-                />
-                <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(8,47,73,0.14)_0%,transparent_40%,rgba(34,211,238,0.14)_100%)]" />
-
-                <div className="absolute left-5 right-5 bottom-5 rounded-2xl bg-white/82 backdrop-blur-lg px-5 py-4 border border-white/70 shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
-                  <p className="text-slate-800 font-semibold text-lg">
-                    From a single photo to a magical character in minutes.
-                  </p>
-                </div>
-              </div>
-            </div>
+function Frontpage() {
+  return (
+    <div className="min-h-screen w-full overflow-x-hidden bg-[linear-gradient(130deg,#f7fbff_0%,#ecf6ff_45%,#f3f8ff_100%)]">
+      <section className="px-4 pb-6 pt-6 sm:px-6 lg:px-8 lg:pt-8">
+        <div className="mx-auto max-w-7xl overflow-hidden rounded-[34px] border border-white/75 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(236,246,255,0.94)_48%,rgba(224,242,254,0.9))] p-3 shadow-[0_28px_70px_rgba(30,64,175,0.16)] sm:p-4 reveal-up">
+          <div className="overflow-hidden rounded-[28px] border border-white/80 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.96),rgba(239,248,255,0.94)_55%,rgba(232,244,255,0.9))] lg:mx-auto lg:flex lg:aspect-[4/3] lg:max-w-5xl lg:items-center lg:justify-center lg:rounded-[32px]">
+            <img
+              src="/guidelines/Cinderella.png"
+              alt="Child storybook transformation preview"
+              className="aspect-[1.02/1] w-full object-contain object-center px-2 sm:aspect-[1.55/1] sm:px-4 lg:h-full lg:aspect-auto lg:px-8"
+              loading="eager"
+            />
           </div>
 
-          <div className="relative reveal-up delay-150">
-            <div className="absolute inset-0 rounded-[2.8rem] bg-sky-300/20 blur-2xl float-drift" />
-            <div className="relative rounded-[2.5rem] bg-white/[0.82] backdrop-blur-2xl shadow-[0_30px_90px_rgba(15,23,42,0.16)] p-8 sm:p-12 border border-white/80">
-              <div className="inline-flex items-center rounded-[1.7rem] bg-white/82 px-5 py-3 border border-white/80 shadow-[0_16px_38px_rgba(14,116,144,0.12)] mb-6">
-                <p className="text-sm sm:text-base font-bold uppercase tracking-[0.26em] text-[#0b2559]">
-                  Storybook Adventures
-                </p>
-              </div>
-              <h1 className="text-4xl xl:text-6xl font-black text-[#08193f] mb-6 leading-[1.06]">
-                Turn your child into the{" "}
-                <span className="text-transparent bg-clip-text bg-[linear-gradient(120deg,#0c4a6e,#2563eb,#0891b2)]">
-                  hero of every adventure
-                </span>
-                .
-              </h1>
-              <p className="text-lg xl:text-xl text-slate-700 mb-8 leading-relaxed">
-                Upload a photo, choose a world, and craft a beautifully
-                personalized storybook where imagination meets memory.
-              </p>
+          <div className="mx-auto max-w-4xl px-2 pb-9 pt-8 text-center sm:px-5 sm:pb-12 sm:pt-10 lg:px-7 lg:pb-14 lg:pt-12">
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-[#0b2559] sm:text-base">
+              Storybook Adventures
+            </p>
 
-              <div className="flex flex-wrap gap-2.5 mb-8">
-                {premiumTags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center rounded-full px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 bg-white/75 border border-sky-100 shadow-[0_6px_18px_rgba(14,116,144,0.08)]"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
+            <h1 className="mx-auto mt-4 max-w-3xl text-4xl font-black leading-[1.05] text-[#08193f] sm:text-5xl lg:text-[4rem]">
+              Surprise your child by making them the main character in their
+              very own storybook
+            </h1>
 
-              <div className="space-y-5 mb-10">
-                {highlights.map((item) => (
-                  <div
-                    key={item.title}
-                    className="flex gap-4 items-start rounded-2xl p-3 bg-white/55 border border-white/70"
-                  >
-                    <span className="mt-1 h-3 w-3 rounded-full bg-gradient-to-r from-cyan-400 to-blue-600 shadow-[0_0_20px_rgba(14,165,233,0.7)] shrink-0" />
-                    <div>
-                      <h3 className="font-bold text-lg text-slate-900">
-                        {item.title}
-                      </h3>
-                      <p className="text-slate-600">{item.text}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link
-                  to="/books"
-                  className="relative overflow-hidden inline-flex items-center justify-center bg-[linear-gradient(115deg,#1d4ed8,#0284c7)] hover:bg-[linear-gradient(115deg,#1e40af,#0369a1)] text-white px-5 py-3.5 rounded-full text-center text-lg font-bold transition-all duration-300 hover:scale-[1.03] shadow-[0_14px_34px_rgba(30,64,175,0.38)] cta-shimmer"
-                >
-                  Create Your Storybook
-                </Link>
-                <a
-                  href="#storybook-why"
-                  className="inline-flex items-center justify-center px-5 py-3.5 rounded-full text-lg font-bold text-blue-900 bg-white/80 border border-white/90 hover:bg-white transition-colors text-center shadow-[0_8px_22px_rgba(14,116,144,0.1)]"
-                >
-                  Why Families Love It
-                </a>
-              </div>
+            <div className="mt-8 flex items-center justify-center">
+              <Link
+                to="/books"
+                className="relative inline-flex w-full items-center justify-center overflow-hidden rounded-full bg-[linear-gradient(115deg,#1d4ed8,#0284c7)] px-6 py-3.5 text-center text-lg font-bold text-white shadow-[0_14px_34px_rgba(30,64,175,0.34)] transition-all duration-300 hover:scale-[1.02] hover:bg-[linear-gradient(115deg,#1e40af,#0369a1)] sm:w-auto sm:min-w-[220px] cta-shimmer"
+              >
+                Create Your Storybooks
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
       <section
-        id="storybook-why"
-        className="relative py-16 sm:py-24 px-6 overflow-hidden bg-gradient-to-b from-sky-50 to-white"
+        id="explore-storybooks"
+        className="relative overflow-hidden bg-gradient-to-b from-blue-50 via-blue-100 to-blue-50 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
       >
-        <div className="absolute top-0 left-0 h-full w-full bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.16),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(37,99,235,0.1),transparent_45%)]" />
-        <div className="relative max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="reveal-up">
-            <h2 className="text-3xl sm:text-4xl font-black text-blue-950 leading-tight mb-5">
-              A magical gift your child can read, hold, and remember.
-            </h2>
-            <p className="text-lg text-slate-700 leading-relaxed mb-6">
-              StoryBook combines personal photos, beautiful illustrations, and
-              heartwarming storylines to create books children feel proud of.
-              Every page celebrates confidence, imagination, and family moments.
-            </p>
-            <p className="text-lg text-slate-700 leading-relaxed">
-              Perfect for birthdays, milestones, and bedtime rituals, each
-              storybook is designed to feel special from the first page to the
-              final smile.
-            </p>
-          </div>
-          <div className="reveal-up delay-150 rounded-3xl p-7 sm:p-9 bg-[#081736] text-blue-50 shadow-[0_20px_60px_rgba(8,23,54,0.45)] border border-blue-400/20">
-            <h3 className="text-2xl sm:text-3xl font-black mb-6">
-              What makes it extraordinary?
-            </h3>
-            <div className="space-y-5 text-base sm:text-lg">
-              <p className="flex gap-3">
-                <span className="text-cyan-300">01</span>
-                <span>Every book is tailored to your child's identity.</span>
-              </p>
-              <p className="flex gap-3">
-                <span className="text-cyan-300">02</span>
-                <span>High-quality visuals crafted for lasting memories.</span>
-              </p>
-              <p className="flex gap-3">
-                <span className="text-cyan-300">03</span>
-                <span>Simple workflow with delightful final results.</span>
-              </p>
-            </div>
+        <div className="relative mx-auto max-w-7xl">
+          <h2 className="text-center text-4xl font-black text-blue-950 reveal-up">
+            Explore Our Storybooks
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-center text-lg font-bold text-blue-700 reveal-up delay-150 sm:text-xl">
+            Pick a magical adventure for your child
+          </p>
+
+          <div className="mt-8">
+            <BooksList layout="horizontal" />
           </div>
         </div>
       </section>
 
-      <section className="relative py-20 px-4 overflow-hidden bg-gradient-to-b from-blue-50 via-blue-100 to-blue-50">
-        <div className="absolute inset-0 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:24px_24px] opacity-20" />
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent" />
-        <div className="relative">
-          <h2 className="text-4xl font-black text-center text-blue-900 pt-4 reveal-up">
-            Explore Our Storybooks
-          </h2>
-          <p className="text-xl text-center text-blue-700 mt-4 mb-10 reveal-up delay-150">
-            Pick a magical adventure for your child
-          </p>
+      <section
+        id="how-storybook-works"
+        className="relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-sky-50 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
+      >
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-2xl text-center reveal-up">
+            <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">
+              How it works
+            </p>
+            <h2 className="mt-4 text-3xl font-black leading-tight text-blue-950 sm:text-4xl">
+              How Storybook Works
+            </h2>
+          </div>
 
-          <BooksList layout="horizontal" />
+          <ol className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-4 lg:gap-5">
+            {storybookWorkSteps.map((step) => (
+              <li
+                key={step.number}
+                className="relative flex flex-col items-center text-center lg:items-start lg:text-left"
+              >
+                <div className="relative h-48 w-full overflow-hidden rounded-[2rem] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.94),rgba(224,242,254,0.78))] shadow-[0_18px_45px_rgba(30,64,175,0.14)]">
+                  <StorybookStepArt variant={step.variant} />
+                </div>
+
+                <div className="mt-5 flex w-full items-center justify-center gap-4 lg:justify-start">
+                  <span
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xl font-black shadow-[0_10px_24px_rgba(30,64,175,0.12)] ${step.accent}`}
+                  >
+                    {step.number}
+                  </span>
+                  <h3 className="text-2xl font-black leading-tight text-slate-950">
+                    {step.title}
+                  </h3>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
     </div>

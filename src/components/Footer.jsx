@@ -2,51 +2,45 @@ import { Link } from "react-router-dom";
 
 function Footer() {
   return (
-    <footer className="relative overflow-hidden bg-[#061434] text-blue-50 px-8 py-16">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(56,189,248,0.2),transparent_35%),radial-gradient(circle_at_80%_70%,rgba(59,130,246,0.2),transparent_40%)]" />
-      <div className="relative max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12">
-        <div>
-          <div className="flex items-center gap-4 mb-6">
-            <div className="rounded-2xl bg-white/12 p-1.5 border border-white/15">
-              <img
-                src="/guidelines/superdadlogo.png"
-                alt="Storybook logo"
-                className="h-14 w-14 rounded-[0.9rem] object-cover"
-              />
-            </div>
-            <h3 className="text-3xl font-black">Storybook</h3>
+    <footer className="bg-[#061434] px-6 py-10 text-blue-50 sm:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-8">
+        <div className="flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-4">
+            <img
+              src="/guidelines/superdadlogo.png"
+              alt="Storybook logo"
+              className="h-12 w-12 rounded-2xl object-cover"
+            />
+            <h3 className="text-2xl font-black">Storybook</h3>
           </div>
-          <nav className="space-y-3">
-            <Link to="/about" className="block text-blue-100 hover:text-cyan-300 transition-colors">
+
+          <nav className="flex flex-wrap gap-x-6 gap-y-3 text-sm font-bold">
+            <Link
+              to="/about"
+              className="text-blue-100 transition-colors hover:text-cyan-300"
+            >
               About Us
             </Link>
-            <Link to="/contact" className="block text-blue-100 hover:text-cyan-300 transition-colors">
+            <Link
+              to="/contact"
+              className="text-blue-100 transition-colors hover:text-cyan-300"
+            >
               FAQs and Contact
             </Link>
-            <Link to="/books" className="block text-blue-100 hover:text-cyan-300 transition-colors">
+            <Link
+              to="/books"
+              className="text-blue-100 transition-colors hover:text-cyan-300"
+            >
               Books for Kids
             </Link>
           </nav>
-        </div>
 
-        <div className="flex justify-center items-center">
-          <div className="rounded-3xl bg-white/10 border border-white/20 px-6 py-6 backdrop-blur-md text-center">
-            <p className="text-sm uppercase tracking-[0.2em] text-cyan-200 mb-2">Made with care</p>
-            <p className="text-xl font-bold">for magical childhood memories</p>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-2xl font-black mb-4">Our Mission</h3>
-          <p className="text-blue-100 mb-6 leading-relaxed">
-            We create personalized books that make children feel seen, celebrated, and inspired every time they turn a page.
-          </p>
-          <div className="flex space-x-3">
+          <div className="flex gap-3">
             <a
               href="https://facebook.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2.5 rounded-full bg-white/10 hover:bg-cyan-400 hover:text-[#05122f] transition-colors"
+              className="rounded-full bg-white/10 p-2.5 transition-colors hover:bg-cyan-400 hover:text-[#05122f]"
             >
               <span className="sr-only">Facebook</span>
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -57,7 +51,7 @@ function Footer() {
               href="https://instagram.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2.5 rounded-full bg-white/10 hover:bg-cyan-400 hover:text-[#05122f] transition-colors"
+              className="rounded-full bg-white/10 p-2.5 transition-colors hover:bg-cyan-400 hover:text-[#05122f]"
             >
               <span className="sr-only">Instagram</span>
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -66,9 +60,13 @@ function Footer() {
             </a>
           </div>
         </div>
-      </div>
-      <div className="relative max-w-7xl mx-auto mt-12 pt-6 border-t border-blue-300/20 text-sm text-blue-200">
-        <p>Copyright {new Date().getFullYear()} Storybook. All rights reserved.</p>
+
+        <div className="border-t border-blue-300/20 pt-6 text-sm text-blue-200">
+          <p>
+            Copyright {new Date().getFullYear()} Storybook. All rights
+            reserved.
+          </p>
+        </div>
       </div>
     </footer>
   );

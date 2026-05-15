@@ -15,6 +15,7 @@ import Checkout from "./pages/Checkout";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import ProtectedRoute from "./components/ProtectedRoute";
+import MetaPixelRouteTracker from "./components/MetaPixelRouteTracker";
 import { AuthProvider } from "./context/AuthContext";
 import { CouponProvider } from "./context/CouponContext";
 
@@ -23,6 +24,7 @@ function App() {
     <Router>
       <AuthProvider>
         <CouponProvider>
+          <MetaPixelRouteTracker />
           <div className="min-h-screen bg-gray-50 flex flex-col">
             <Navbar />
             <main className="flex-grow ">

@@ -5,6 +5,7 @@ import {
   verifyRazorpayPayment,
 } from "../services/paymentApi";
 import { apiRequest } from "../utils/api";
+import { getStorybookEventParams, trackMetaEvent } from "../utils/metaPixel";
 
 function UnlockPaymentModal({
   req_id,
@@ -56,6 +57,12 @@ function UnlockPaymentModal({
 
     try {
       const orderRes = await createRazorpayOrder(req_id, amount, book_id, token);
+      const eventParams = getStorybookEventParams({
+        bookId: book_id,
+        value: amount,
+      });
+
+      trackMetaEvent("AddPaymentInfo", eventParams);
 
       const options = {
         key: orderRes.key,
@@ -76,6 +83,7 @@ function UnlockPaymentModal({
               token,
             );
 
+            trackMetaEvent("Purchase", eventParams);
             onSuccess();
           } catch (error) {
             setPaymentError(

@@ -19,6 +19,7 @@ import {
   getAuthIntent,
   saveAuthIntent,
 } from "../utils/authIntent";
+import { getStorybookEventParams, trackMetaEvent } from "../utils/metaPixel";
 
 function getPageImages(page) {
   if (Array.isArray(page?.image_options) && page.image_options.length > 0) {
@@ -404,6 +405,13 @@ function Preview() {
         return;
       }
 
+      trackMetaEvent(
+        "InitiateCheckout",
+        getStorybookEventParams({
+          bookId: book_id,
+          value: bookPrice,
+        }),
+      );
       setUnlockCouponAvailable(couponAvailable);
       setUnlockIntentMode(couponAvailable ? "coupon" : "payment");
       setShowPayment(true);
@@ -414,7 +422,7 @@ function Preview() {
     return () => {
       isMounted = false;
     };
-  }, [bookPrice, fullAccess, openPayment, refreshPublicStatus]);
+  }, [bookPrice, book_id, fullAccess, openPayment, refreshPublicStatus]);
 
   useEffect(() => {
     const fetchPaymentStatus = async () => {
@@ -749,10 +757,17 @@ function Preview() {
     const status = await refreshPublicStatus();
     const couponAvailable = Boolean(status?.couponAvailable);
 
+    trackMetaEvent(
+      "InitiateCheckout",
+      getStorybookEventParams({
+        bookId: book_id,
+        value: bookPrice,
+      }),
+    );
     setUnlockCouponAvailable(couponAvailable);
     setUnlockIntentMode(couponAvailable ? "coupon" : "payment");
     setShowPayment(true);
-  }, [refreshPublicStatus]);
+  }, [bookPrice, book_id, refreshPublicStatus]);
 
   const handleUnlockSuccess = useCallback(() => {
     setShowPayment(false);

@@ -4,6 +4,7 @@ import heroImg from "../assets/magic_icon.svg";
 import useChildStore from "../store/childStore";
 import axios from "axios";
 import { apiUrl } from "../config/api";
+import { getStorybookEventParams, trackMetaEvent } from "../utils/metaPixel";
 
 function SavePreview() {
   const navigate = useNavigate();
@@ -79,6 +80,13 @@ function SavePreview() {
     e.preventDefault();
     try {
       await sendPreviewLink();
+      trackMetaEvent(
+        "Lead",
+        getStorybookEventParams({
+          bookId: book_id,
+          category: notify ? "Email Preview Request" : "Saved Preview",
+        }),
+      );
 
       if (notify) {
         setShowThankYou(true);

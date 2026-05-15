@@ -1,10 +1,22 @@
 import { useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
+import { getStorybookEventParams, trackMetaEvent } from "../utils/metaPixel";
 
 function BookCard({ book }) {
   const navigate = useNavigate();
 
   const openForm = () => {
+    trackMetaEvent(
+      "ViewContent",
+      getStorybookEventParams({
+        bookId: book._id,
+        bookTitle: book.title,
+        category: book.age_group
+          ? `Personalized Storybook - Ages ${book.age_group}`
+          : "Personalized Storybook",
+      }),
+    );
+
     navigate(
       `/details?book_id=${book._id}&page_count=${book.page_count}&min_photos=${book.min_required_photos}&age_group=${
         book.age_group

@@ -7,6 +7,7 @@ import {
   CakeIcon,
   ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
+import { getStorybookEventParams, trackMetaEvent } from "../utils/metaPixel";
 
 const getParsedAgeGroup = (value) => {
   if (!value) {
@@ -195,6 +196,15 @@ function ChildDetails() {
     }
 
     setChildName(formData.name);
+    trackMetaEvent(
+      "CustomizeProduct",
+      getStorybookEventParams({
+        bookId: book_id,
+        category: age_group
+          ? `Personalized Storybook - Ages ${age_group}`
+          : "Personalized Storybook",
+      }),
+    );
 
     const uploadParams = new URLSearchParams({
       book_id: book_id,

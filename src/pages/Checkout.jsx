@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import UnlockPaymentModal from "../components/UnlockPaymentModal";
 import { useAuth } from "../context/AuthContext";
 import { apiRequest } from "../utils/api";
+import { getStorybookEventParams, trackMetaEvent } from "../utils/metaPixel";
 
 export default function Checkout() {
   const [params] = useSearchParams();
@@ -68,6 +69,13 @@ export default function Checkout() {
         },
       });
 
+      trackMetaEvent(
+        "InitiateCheckout",
+        getStorybookEventParams({
+          bookId: book_id,
+          value: book_Price,
+        }),
+      );
       setShowPayment(true);
     } catch {
       alert("Please fill complete address");

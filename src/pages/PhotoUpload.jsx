@@ -5,6 +5,7 @@ import useChildStore from "../store/childStore";
 import { PhotoIcon, BookOpenIcon } from "@heroicons/react/24/outline";
 import axios from "axios";
 import { apiUrl } from "../config/api";
+import { getStorybookEventParams, trackMetaEvent } from "../utils/metaPixel";
 
 const getFileKey = (file) => `${file.name}-${file.size}-${file.lastModified}`;
 
@@ -128,6 +129,14 @@ function PhotoUpload() {
 
   const handleShowPreview = () => {
     if (uploadStatus.every((status) => status.success) && req_id) {
+      trackMetaEvent(
+        "Lead",
+        getStorybookEventParams({
+          bookId: book_id,
+          category: "Photo Upload Completed",
+        }),
+      );
+
       // Create query params with all details for preview page
       const previewParams = new URLSearchParams({
         request_id: req_id,

@@ -1,121 +1,266 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 import {
   ArrowUpTrayIcon,
   BookOpenIcon,
+  CheckCircleIcon,
   TruckIcon,
 } from "@heroicons/react/24/outline";
 import BooksList from "./BooksList";
+import { apiUrl } from "../config/api";
 
-const storybookWorkSteps = [
+const featuredStorybookFallbacks = [
   {
-    number: "1",
-    title: "Pick Storybook",
-    variant: "pick",
-    accent: "bg-blue-100 text-blue-950",
+    title: "The Ribbon Of Kindness",
+    cover_photo:
+      "https://kids-storybooks.s3.ap-south-1.amazonaws.com/original_images/ribbon_book.jpg",
   },
   {
-    number: "2",
-    title: "Add your Child's Picture",
-    variant: "upload",
-    accent: "bg-cyan-100 text-blue-950",
+    title: "Future Deciding Stone",
+    cover_photo:
+      "https://kids-storybooks.s3.ap-south-1.amazonaws.com/storybook_cover_photo/future_deciding_stone.jpg",
   },
   {
-    number: "3",
-    title: "Preview & Order",
-    variant: "preview",
-    accent: "bg-sky-100 text-blue-950",
-  },
-  {
-    number: "4",
-    title: "Your story is printed with care and delivered with joy.",
-    variant: "delivery",
-    accent: "bg-indigo-100 text-blue-950",
+    title: "Time Machine",
+    cover_photo:
+      "https://kids-storybooks.s3.ap-south-1.amazonaws.com/storybook_cover_photo/time+machine.jpg",
   },
 ];
 
-function StorybookStepArt({ variant }) {
-  if (variant === "pick") {
-    return (
-      <div className="relative flex h-full items-center justify-center">
-        <div className="absolute inset-x-4 top-7 h-24 rounded-[2rem] bg-white/80 shadow-[0_16px_36px_rgba(30,64,175,0.12)]" />
-        <div className="relative flex items-end justify-center gap-2">
-          {["-rotate-6", "scale-110", "rotate-6"].map((tilt, index) => (
-            <div
-              key={tilt}
-              className={`h-24 w-16 overflow-hidden rounded-xl border border-white/90 bg-white shadow-[0_10px_24px_rgba(30,64,175,0.18)] ${tilt}`}
-            >
-              <img
-                src="/guidelines/Cinderella.png"
-                alt={`Storybook cover option ${index + 1}`}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            </div>
-          ))}
-        </div>
-        <BookOpenIcon className="absolute bottom-6 right-8 h-8 w-8 text-blue-600" />
-      </div>
-    );
-  }
+function useFeaturedStorybooks() {
+  const [books, setBooks] = useState(featuredStorybookFallbacks);
 
-  if (variant === "upload") {
-    return (
-      <div className="relative flex h-full items-center justify-center">
-        <div className="absolute inset-x-5 top-8 h-28 rounded-[2rem] border-2 border-dashed border-blue-300 bg-white/82 shadow-[0_16px_36px_rgba(30,64,175,0.1)]" />
-        <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-[0_12px_30px_rgba(30,64,175,0.18)]">
+  useEffect(() => {
+    let isMounted = true;
+
+    async function getBooks() {
+      try {
+        const response = await axios.get(apiUrl("/api/storybook"));
+        const liveBooks = Array.isArray(response.data)
+          ? response.data
+          : response.data?.value;
+        const selectedBooks = Array.isArray(liveBooks)
+          ? liveBooks.slice(0, 3).filter((book) => book?.cover_photo)
+          : [];
+
+        if (isMounted && selectedBooks.length === 3) {
+          setBooks(selectedBooks);
+        }
+      } catch (error) {
+        console.log("Error fetching storybooks for how it works:", error);
+      }
+    }
+
+    getBooks();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  return books;
+}
+
+function StepShell({ number, title, accent, children }) {
+  return (
+    <li className="relative flex flex-col">
+      <div className="relative min-h-[250px] overflow-hidden rounded-[1.75rem] border border-white/90 bg-white/82 px-5 py-6 shadow-[0_20px_52px_rgba(30,64,175,0.13)] sm:min-h-[280px] sm:px-6">
+        <div className="pointer-events-none absolute inset-x-6 top-6 h-4 rounded-full bg-white/80 blur-sm" />
+        {children}
+      </div>
+
+      <div className="mt-5 flex items-center gap-4">
+        <span
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xl font-black shadow-[0_10px_24px_rgba(30,64,175,0.14)] ${accent}`}
+        >
+          {number}
+        </span>
+        <h3 className="text-2xl font-black leading-tight text-slate-950 sm:text-[1.65rem]">
+          {title}
+        </h3>
+      </div>
+    </li>
+  );
+}
+
+function PickStorybookArt({ books }) {
+  const coverTilt = ["-rotate-6", "scale-110", "rotate-5"];
+
+  return (
+    <div className="relative flex h-full min-h-[210px] items-center justify-center">
+      <div className="absolute left-1/2 top-1/2 h-40 w-[92%] -translate-x-1/2 -translate-y-1/2 rounded-[2rem] bg-sky-50 shadow-[inset_0_0_0_1px_rgba(125,211,252,0.28)]" />
+      <div className="relative flex w-full items-end justify-center gap-2 sm:gap-3">
+        {books.map((book, index) => (
+          <div
+            key={`${book.title}-${book.cover_photo}`}
+            className={`relative h-36 w-[31%] max-w-[92px] overflow-hidden rounded-xl border-2 border-white bg-white shadow-[0_14px_26px_rgba(15,23,42,0.2)] ${coverTilt[index]}`}
+          >
+            <img
+              src={book.cover_photo}
+              alt={`${book.title} storybook cover`}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/78 to-transparent px-2 pb-2 pt-7">
+              <p className="line-clamp-2 text-center text-[10px] font-black leading-tight text-white">
+                {book.title}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <BookOpenIcon className="absolute bottom-3 right-3 h-9 w-9 rounded-full bg-white p-1.5 text-blue-600 shadow-[0_10px_22px_rgba(37,99,235,0.18)]" />
+    </div>
+  );
+}
+
+function UploadPictureArt() {
+  return (
+    <div className="relative flex h-full min-h-[210px] items-center justify-center">
+      <div className="relative flex h-36 w-full max-w-[260px] items-center justify-between rounded-[1.75rem] border-2 border-dashed border-violet-300 bg-white px-6 shadow-[0_18px_34px_rgba(91,33,182,0.12)]">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-100 text-violet-700">
+          <ArrowUpTrayIcon className="h-8 w-8" />
+        </div>
+        <div className="flex flex-1 flex-col gap-2 px-5" aria-hidden="true">
+          <span className="h-2.5 rounded-full bg-violet-100" />
+          <span className="h-2.5 rounded-full bg-sky-100" />
+          <span className="h-2.5 w-2/3 rounded-full bg-pink-100" />
+        </div>
+        <div className="absolute -right-2 top-1/2 h-32 w-32 -translate-y-1/2 border-[7px] border-white bg-white shadow-[0_16px_32px_rgba(15,23,42,0.2)]">
           <img
-            src="/guidelines/Cinderella.png"
-            alt="Child photo upload preview"
-            className="h-20 w-20 rounded-full object-cover"
+            src="/guidelines/upload-child-face.jpg"
+            alt="Uploaded child face preview"
+            className="h-full w-full object-cover"
             loading="lazy"
           />
         </div>
-        <div className="absolute left-8 top-12 flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 text-white shadow-[0_12px_24px_rgba(37,99,235,0.28)]">
-          <ArrowUpTrayIcon className="h-6 w-6" />
-        </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
-  if (variant === "preview") {
-    return (
-      <div className="relative flex h-full items-center justify-center">
-        <div className="relative flex h-28 w-52 -rotate-3 overflow-hidden rounded-xl border border-blue-100 bg-white shadow-[0_16px_34px_rgba(15,23,42,0.2)]">
-          <div className="w-1/2 border-r border-blue-100 bg-sky-50 p-2">
+function PreviewOrderArt() {
+  return (
+    <div className="relative flex h-full min-h-[210px] items-center justify-center">
+      <div className="relative w-full max-w-[275px] -rotate-2 rounded-[1.5rem] bg-white p-3 shadow-[0_18px_34px_rgba(15,23,42,0.18)]">
+        <div className="grid grid-cols-2 gap-2 rounded-[1.1rem] border border-sky-100 bg-sky-50 p-2">
+          <div className="overflow-hidden rounded-xl bg-white">
             <img
               src="/guidelines/Cinderella.png"
-              alt="Storybook page preview"
-              className="h-full w-full rounded-lg object-cover"
+              alt="Cinderella storybook page preview"
+              className="aspect-[4/5] h-full w-full object-cover"
               loading="lazy"
             />
           </div>
-          <div className="flex w-1/2 flex-col justify-center gap-2 bg-white p-3">
-            <span className="h-2 rounded-full bg-blue-200" />
-            <span className="h-2 rounded-full bg-sky-200" />
-            <span className="h-2 w-2/3 rounded-full bg-blue-100" />
+          <div className="flex flex-col justify-center rounded-xl bg-white px-3 py-4">
+            <span className="mb-3 inline-flex w-fit rounded-full bg-green-100 px-2 py-1 text-[10px] font-black text-green-700">
+              Ready
+            </span>
+            <span className="mb-2 h-2.5 rounded-full bg-blue-100" />
+            <span className="mb-2 h-2.5 rounded-full bg-sky-100" />
+            <span className="h-2.5 w-2/3 rounded-full bg-rose-100" />
           </div>
         </div>
-        <div className="absolute bottom-5 right-9 rounded-full bg-white px-3 py-1 text-xs font-black text-blue-700 shadow-[0_8px_20px_rgba(30,64,175,0.16)]">
-          Ready
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative flex h-full items-center justify-center">
-      <div className="relative h-28 w-44 rotate-[-7deg] overflow-hidden rounded-xl border border-white/90 bg-white shadow-[0_18px_38px_rgba(30,64,175,0.18)]">
-        <img
-          src="/guidelines/Cinderella.png"
-          alt="Printed storybook"
-          className="h-full w-full object-cover"
-          loading="lazy"
-        />
-      </div>
-      <div className="absolute bottom-5 right-7 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-[0_14px_28px_rgba(37,99,235,0.3)]">
-        <TruckIcon className="h-7 w-7" />
+        <p className="mt-3 px-1 text-center text-sm font-black leading-snug text-slate-800">
+          Your child becomes the hero of a magical adventure.
+        </p>
       </div>
     </div>
+  );
+}
+
+function DeliveryArt() {
+  return (
+    <div className="relative flex h-full min-h-[210px] items-center justify-center">
+      <div
+        className="relative h-40 w-52 transform-gpu sm:h-44 sm:w-56"
+        style={{
+          transform: "perspective(760px) rotateY(-14deg) rotateZ(-5deg)",
+        }}
+      >
+        <div className="absolute left-5 top-5 h-[88%] w-[88%] rounded-[1.1rem] bg-slate-200 shadow-[12px_18px_28px_rgba(15,23,42,0.18)]" />
+        <div className="absolute left-3 top-3 h-[88%] w-[88%] rounded-[1.1rem] border border-slate-200 bg-white shadow-[0_14px_22px_rgba(15,23,42,0.16)]">
+          <span className="absolute bottom-4 right-3 h-[70%] w-1 rounded-full bg-slate-200" />
+          <span className="absolute bottom-4 right-7 h-[70%] w-1 rounded-full bg-slate-200" />
+          <span className="absolute bottom-4 right-11 h-[70%] w-1 rounded-full bg-slate-200" />
+        </div>
+        <div className="absolute inset-0 overflow-hidden rounded-[1.15rem] border-[5px] border-white bg-white shadow-[0_22px_38px_rgba(15,23,42,0.26)]">
+          <div className="absolute left-0 top-0 z-10 h-full w-4 bg-gradient-to-r from-slate-950/35 via-white/20 to-transparent" />
+          <img
+            src="/guidelines/Cinderella.png"
+            alt="Printed Cinderella personalized storybook cover"
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/82 to-transparent px-3 pb-3 pt-10">
+            <p className="text-sm font-black leading-tight text-white">
+              Cinderella
+            </p>
+            <p className="text-[11px] font-bold leading-tight text-white/85">
+              Printed book
+            </p>
+          </div>
+        </div>
+      </div>
+      <div className="absolute bottom-4 right-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-600 text-white shadow-[0_14px_28px_rgba(37,99,235,0.32)]">
+        <TruckIcon className="h-8 w-8" />
+      </div>
+      <CheckCircleIcon className="absolute left-5 top-6 h-9 w-9 rounded-full bg-white text-emerald-500 shadow-[0_10px_22px_rgba(15,23,42,0.12)]" />
+    </div>
+  );
+}
+
+function HowStorybookWorksSection() {
+  const books = useFeaturedStorybooks();
+
+  return (
+    <section
+      id="how-storybook-works"
+      className="relative overflow-hidden bg-[linear-gradient(180deg,#eff7ff_0%,#ffffff_46%,#eef9ff_100%)] px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
+    >
+      <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-2xl text-center reveal-up">
+          <h2 className="text-sm font-black uppercase tracking-[0.28em] text-blue-700">
+            HOW IT WORKS
+          </h2>
+        </div>
+
+        <ol className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          <StepShell
+            number="1"
+            title="Pick Storybook"
+            accent="bg-sky-100 text-blue-950"
+          >
+            <PickStorybookArt books={books} />
+          </StepShell>
+
+          <StepShell
+            number="2"
+            title="Add your Child's Picture"
+            accent="bg-violet-100 text-violet-950"
+          >
+            <UploadPictureArt />
+          </StepShell>
+
+          <StepShell
+            number="3"
+            title="Preview & Order"
+            accent="bg-rose-100 text-rose-950"
+          >
+            <PreviewOrderArt />
+          </StepShell>
+
+          <StepShell
+            number="4"
+            title="Your story is printed with care and delivered with joy."
+            accent="bg-sky-100 text-blue-950"
+          >
+            <DeliveryArt />
+          </StepShell>
+        </ol>
+      </div>
+    </section>
   );
 }
 
@@ -173,45 +318,7 @@ function Frontpage() {
         </div>
       </section>
 
-      <section
-        id="how-storybook-works"
-        className="relative overflow-hidden bg-gradient-to-b from-blue-50 via-white to-sky-50 px-4 py-16 sm:px-6 sm:py-20 lg:px-8"
-      >
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto max-w-2xl text-center reveal-up">
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-blue-700">
-              How it works
-            </p>
-            <h2 className="mt-4 text-3xl font-black leading-tight text-blue-950 sm:text-4xl">
-              How Storybook Works
-            </h2>
-          </div>
-
-          <ol className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-4 lg:gap-5">
-            {storybookWorkSteps.map((step) => (
-              <li
-                key={step.number}
-                className="relative flex flex-col items-center text-center lg:items-start lg:text-left"
-              >
-                <div className="relative h-48 w-full overflow-hidden rounded-[2rem] border border-white/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.94),rgba(224,242,254,0.78))] shadow-[0_18px_45px_rgba(30,64,175,0.14)]">
-                  <StorybookStepArt variant={step.variant} />
-                </div>
-
-                <div className="mt-5 flex w-full items-center justify-center gap-4 lg:justify-start">
-                  <span
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xl font-black shadow-[0_10px_24px_rgba(30,64,175,0.12)] ${step.accent}`}
-                  >
-                    {step.number}
-                  </span>
-                  <h3 className="text-2xl font-black leading-tight text-slate-950">
-                    {step.title}
-                  </h3>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
+      <HowStorybookWorksSection />
     </div>
   );
 }

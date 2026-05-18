@@ -65,20 +65,20 @@ function useFeaturedStorybooks() {
 function StepShell({ number, title, accent, children }) {
   return (
     <li className="relative flex flex-col">
-      <div className="relative min-h-[250px] overflow-hidden rounded-[1.75rem] border border-white/90 bg-white/82 px-5 py-6 shadow-[0_20px_52px_rgba(30,64,175,0.13)] sm:min-h-[280px] sm:px-6">
-        <div className="pointer-events-none absolute inset-x-6 top-6 h-4 rounded-full bg-white/80 blur-sm" />
-        {children}
-      </div>
-
-      <div className="mt-5 flex items-center gap-4">
+      <div className="mb-4 flex min-h-[68px] items-center gap-3 rounded-2xl bg-white/70 px-3 py-3 shadow-[0_12px_30px_rgba(30,64,175,0.08)] lg:min-h-[92px]">
         <span
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-xl font-black shadow-[0_10px_24px_rgba(30,64,175,0.14)] ${accent}`}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-lg font-black shadow-[0_10px_24px_rgba(30,64,175,0.14)] ${accent}`}
         >
           {number}
         </span>
-        <h3 className="text-2xl font-black leading-tight text-slate-950 sm:text-[1.65rem]">
+        <h3 className="text-xl font-black leading-snug text-slate-950 sm:text-2xl lg:text-[1.35rem]">
           {title}
         </h3>
+      </div>
+
+      <div className="relative min-h-[250px] overflow-hidden rounded-[1.75rem] border border-white/90 bg-white/82 px-5 py-6 shadow-[0_20px_52px_rgba(30,64,175,0.13)] sm:min-h-[280px] sm:px-6">
+        <div className="pointer-events-none absolute inset-x-6 top-6 h-4 rounded-full bg-white/80 blur-sm" />
+        {children}
       </div>
     </li>
   );
@@ -221,12 +221,12 @@ function HowStorybookWorksSection() {
     >
       <div className="mx-auto max-w-7xl">
         <div className="mx-auto max-w-2xl text-center reveal-up">
-          <h2 className="text-sm font-black uppercase tracking-[0.28em] text-blue-700">
+          <h2 className="text-4xl font-black leading-tight text-blue-950">
             HOW IT WORKS
           </h2>
         </div>
 
-        <ol className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+        <ol className="mt-14 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
           <StepShell
             number="1"
             title="Pick Storybook"
